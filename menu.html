@@ -21,6 +21,15 @@
         let cart = [];
         const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2MH7NNXTnwOqG8pOR0LNn6ENeI9QeTnf5IM-GkYuq-w3drVuhxfLb6nX-uQcNn6mBFcqLHIVGPNjI/pub?output=csv";
 
+        // Функция для конвертации ссылок Google Drive
+        function convertDriveLink(link) {
+            if (link.includes("drive.google.com/file/d/")) {
+                let fileId = link.split("/d/")[1].split("/view")[0];
+                return `https://drive.google.com/uc?export=view&id=${fileId}`;
+            }
+            return link; // Если ссылка уже правильная
+        }
+
         // Загружаем меню из Google Sheets
         function loadMenu() {
             fetch(sheetUrl)
@@ -32,15 +41,16 @@
                     rows.forEach((item, index) => {
                         if (index === 0) return; // Пропускаем заголовок
 
-                        let name = item[0] ? item[0].trim() : "Без названия";
-                        let price = item[1] ? parseInt(item[1].trim()) : 0;
-                        let description = item[2] ? item[2].trim() : "Нет описания";
-                        let imageUrl = item[3] ? item[3].trim() : "https://via.placeholder.com/100"; // Заглушка, если нет фото
+                        let name = item[1] ? item[1].trim() : "Без названия"; // Название блюда (B)
+                        let size = item[2] ? item[2].trim() : ""; // Размер (C)
+                        let description = item[3] ? item[3].trim() : "Нет описания"; // Описание (D)
+                        let price = item[4] ? parseInt(item[4].trim()) : 0; // Цена (E)
+                        let imageUrl = item[5] ? convertDriveLink(item[5].trim()) : "https://via.placeholder.com/100"; // Фото (F)
 
                         menuHTML += `
                             <div class="menu-item">
                                 <img src="${imageUrl}" alt="${name}" style="width:100px;">
-                                <h3>${name} - ${price}₽</h3>
+                                <h3>${name} ${size} - ${price}₽</h3>
                                 <p>${description}</p>
                                 <button onclick="addToCart('${name}', ${price})">➕ Добавить</button>
                             </div>`;

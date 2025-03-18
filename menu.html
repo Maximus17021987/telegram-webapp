@@ -8,52 +8,102 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h2>Наше меню</h2>
+    <h2>🍕 Наше меню</h2>
     <div id="menu"></div>
-    <button onclick="sendOrder()">🛒 Оформить заказ</button>
+
+    <h2>🛒 Корзина</h2>
+    <div id="cart"></div>
+    
+    <textarea id="comment" placeholder="Комментарий к заказу..."></textarea>
+    <button onclick="sendOrder()">📩 Оформить заказ</button>
 
     <script>
         let cart = [];
+        const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2MH7NNXTnwOqG8pOR0LNn6ENeI9QeTnf5IM-GkYuq-w3drVuhxfLb6nX-uQcNn6mBFcqLHIVGPNjI/pub?output=csv";
 
-        // Меню пиццы
-        const menuItems = [
-            { id: 1, name: "Маргарита", price: 500 },
-            { id: 2, name: "Пепперони", price: 600 },
-            { id: 3, name: "Четыре сыра", price: 650 }
-        ];
+        // Загружаем меню из Google Sheets
+        function loadMenu() {
+            fetch(sheetUrl)
+                .then(response => response.text())
+                .then(data => {
+                    const rows = data.split("\n").map(row => row.split(","));
+                    let menuHTML = "";
 
-        // Отображение меню
-        function renderMenu() {
-            let menuHTML = "";
-            menuItems.forEach(item => {
-                menuHTML += `
-                    <div>
-                        <h3>${item.name} - ${item.price}₽</h3>
-                        <button onclick="addToCart(${item.id})">Добавить в корзину</button>
-                    </div>
-                `;
-            });
-            document.getElementById("menu").innerHTML = menuHTML;
+                    rows.forEach((item, index) => {
+                        if (index === 0) return; // Пропускаем заголовок
+                        const [name, price, description, imageUrl] = item;
+                        menuHTML += `
+                            <div class="menu-item">
+                                <img src="${imageUrl}" alt="${name}" style="width:100px;">
+                                <h3>${name} - ${price}₽</h3>
+                                <p>${description}</p>
+                                <button onclick="addToCart('${name}', ${price}')">➕ Добавить</button>
+                            </div>`;
+                    });
+
+                    document.getElementById("menu").innerHTML = menuHTML;
+                })
+                .catch(error => console.error("Ошибка загрузки меню:", error));
         }
 
         // Добавление товара в корзину
-        function addToCart(id) {
-            let item = menuItems.find(m => m.id === id);
-            cart.push(item);
-            alert(`${item.name} добавлена в корзину!`);
+        function addToCart(name, price) {
+            let item = cart.find(i => i.name === name);
+            if (item) {
+                item.quantity++;
+            } else {
+                cart.push({ name, price, quantity: 1 });
+            }
+            updateCart();
+        }
+
+        // Удаление товара из корзины
+        function removeFromCart(name) {
+            cart = cart.filter(item => item.name !== name);
+            updateCart();
+        }
+
+        // Обновление корзины
+        function updateCart() {
+            let cartHTML = "";
+            let total = 0;
+
+            cart.forEach((item) => {
+                total += item.price * item.quantity;
+                cartHTML += `
+                    <div class="cart-item">
+                        <span>${item.name} x${item.quantity} - ${item.price * item.quantity}₽</span>
+                        <button onclick="removeFromCart('${item.name}')">❌</button>
+                    </div>`;
+            });
+
+            cartHTML += `<p><strong>💰 Итого: ${total}₽</strong></p>`;
+            document.getElementById("cart").innerHTML = cartHTML;
         }
 
         // Отправка заказа в Telegram
         function sendOrder() {
-            let orderText = cart.map(i => `${i.name} - ${i.price}₽`).join("\\n");
-            let total = cart.reduce((sum, item) => sum + item.price, 0);
-            let fullText = `🛒 Ваш заказ:\\n${orderText}\\n💰 Общая сумма: ${total}₽`;
+            if (cart.length === 0) {
+                alert("Корзина пуста!");
+                return;
+            }
+
+            let orderText = cart.map(i => `${i.name} x${i.quantity} - ${i.price * i.quantity}₽`).join("\n");
+            let total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+            let comment = document.getElementById("comment").value;
+
+            let fullText = `🛒 Новый заказ:\n${orderText}\n💰 Общая сумма: ${total}₽\n✏️ Комментарий: ${comment}`;
 
             Telegram.WebApp.sendData(fullText);
-            alert("Заказ отправлен!");
+            alert("✅ Заказ отправлен!");
+            cart = [];
+            updateCart();
+            document.getElementById("comment").value = "";
         }
 
-        renderMenu();
+        loadMenu();
     </script>
 </body>
+</html>
+
 </html>

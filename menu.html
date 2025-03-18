@@ -31,13 +31,18 @@
 
                     rows.forEach((item, index) => {
                         if (index === 0) return; // Пропускаем заголовок
-                        const [name, price, description, imageUrl] = item;
+
+                        let name = item[0] ? item[0].trim() : "Без названия";
+                        let price = item[1] ? parseInt(item[1].trim()) : 0;
+                        let description = item[2] ? item[2].trim() : "Нет описания";
+                        let imageUrl = item[3] ? item[3].trim() : "https://via.placeholder.com/100"; // Заглушка, если нет фото
+
                         menuHTML += `
                             <div class="menu-item">
                                 <img src="${imageUrl}" alt="${name}" style="width:100px;">
                                 <h3>${name} - ${price}₽</h3>
                                 <p>${description}</p>
-                                <button onclick="addToCart('${name}', ${price}')">➕ Добавить</button>
+                                <button onclick="addToCart('${name}', ${price})">➕ Добавить</button>
                             </div>`;
                     });
 
@@ -106,4 +111,3 @@
 </body>
 </html>
 
-</html>
